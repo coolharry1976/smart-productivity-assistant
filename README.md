@@ -1,4 +1,4 @@
-@"
+
 # Smart Productivity Assistant (AWS Serverless)
 
 Cloud-native task manager using **AWS Lambda**, **API Gateway**, **DynamoDB**, and **S3**.
