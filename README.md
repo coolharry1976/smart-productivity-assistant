@@ -41,6 +41,5 @@ Put secrets in SSM Parameter Store (e.g., /spa/JWT_SECRET).
 
 Don’t commit any .env files.
 
-License
+## License
 MIT
-"@ | Set-Content -Encoding utf8 README.md
