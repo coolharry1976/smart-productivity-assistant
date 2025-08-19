@@ -1,0 +1,98 @@
+/* ====== Base / layout ====== */
+:root{
+  --bg:#f6f7fb; --panel:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --primary:#2563eb; --primary-600:#1e4fd6; --border:#e5e7eb; --danger:#dc2626;
+  --radius:14px; --shadow:0 8px 24px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+/* ====== Container / cards ====== */
+.container{max-width:860px;margin:36px auto;padding:0 20px}
+.card{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:16px;
+}
+
+/* ====== Flex helpers ====== */
+.row{display:flex;align-items:center;gap:10px}
+.space-between{justify-content:space-between}
+
+/* ====== Headings / text ====== */
+h1,h2{margin:0}
+h2{font-size:1.5rem}
+.muted{color:var(--muted)}
+
+/* ====== Inputs / buttons ====== */
+input,select{
+  padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff;
+  font-size:.95rem; outline:none; transition:border-color .15s, box-shadow .15s;
+}
+input:focus,select:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+button{
+  background:var(--primary); color:#fff; border:none; padding:10px 14px; border-radius:10px;
+  font-weight:600; cursor:pointer; transition:background .15s, transform .05s; box-shadow:0 6px 14px rgba(37,99,235,.18);
+}
+button:hover{background:var(--primary-600)}
+button:active{transform:translateY(1px)}
+button.secondary{background:#eef2ff;color:#1f2937;box-shadow:none}
+button.link{background:transparent;color:var(--primary);padding:6px 8px;box-shadow:none}
+button.danger{background:var(--danger)}
+
+/* ====== Header ====== */
+.appbar{margin-bottom:18px}
+.appbar .title{font-weight:700}
+
+/* ====== Create form ====== */
+.create-row{margin-bottom:14px}
+.create-row input[type="text"]{flex:1}
+
+/* ====== Filter bar ====== */
+.filters.card{margin-bottom:14px;padding:10px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{
+  padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#374151;
+  cursor:pointer;font-weight:600; font-size:.9rem;
+}
+.tab.active{background:#eaf1ff;border-color:#bcd2ff;color:#1e3a8a}
+.filters .row{gap:8px}
+.search{flex:1}
+
+/* ====== List / items ====== */
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.item{
+  background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px; animation:itemIn .18s ease both;
+}
+@keyframes itemIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.left{display:flex;align-items:center;gap:10px}
+.checkbox{
+  width:18px;height:18px;border:2px solid var(--primary);border-radius:6px;background:#fff;display:grid;place-items:center;cursor:pointer;
+}
+.checkbox span{font-size:12px;transform:scale(0);transition:transform .12s}
+.checkbox.checked{background:var(--primary)}
+.checkbox.checked span{color:#fff;transform:scale(1)}
+.title{font-weight:600}
+.done{text-decoration:line-through;color:#9aa1aa}
+
+.badge{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);
+  background:#fafafb;color:#6b7280;font-size:.78rem;
+}
+
+/* ====== Empty state ====== */
+.empty.card{padding:28px;text-align:center;color:var(--muted)}
+.empty svg{width:46px;height:46px;opacity:.6;margin-bottom:8px}
+
+/* ====== Toast ====== */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:#111827;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);
+  opacity:0;animation:toastIn .25s ease forwards;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}

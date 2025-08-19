@@ -1,0 +1,27 @@
+﻿# Node / Frontend
+node_modules/
+spa-frontend/node_modules/
+spa-frontend/dist/
+
+# AWS SAM build artifacts
+.aws-sam/
+
+# Local env & creds (VERY IMPORTANT)
+.env
+spa-frontend/.env
+*.env
+.aws/
+.aws/credentials
+*.pem
+
+# Logs & OS junk
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/

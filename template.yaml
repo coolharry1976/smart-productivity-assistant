@@ -1,0 +1,209 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Smart Productivity Assistant (Serverless) - Minimal
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_TASKS: !Ref TasksTable
+        TABLE_USERS: !Ref UsersTable
+        JWT_SECRET_PARAM: /spa/JWT_SECRET
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        MaxAge: "'86400'"
+
+  # ---------- Public Auth ----------
+  RegisterUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: register.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /auth/register
+            Method: POST
+
+  LoginUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: login.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /auth/login
+            Method: POST
+
+  # ---------- Custom JWT Authorizer ----------
+  JwtAuthorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/authorizer
+      Handler: index.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+
+  # ---------- Protected ----------
+  SecureHello:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: secureHello.handler
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+      Events:
+        ApiGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /secure/hello
+            Method: GET
+            Auth:
+              Authorizer: JwtAuthorizer
+
+  TasksListCreate:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: tasks.listCreate
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+      Events:
+        GetTasks:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /tasks
+            Method: GET
+            Auth:
+              Authorizer: JwtAuthorizer
+        PostTask:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /tasks
+            Method: POST
+            Auth:
+              Authorizer: JwtAuthorizer
+
+  TasksUpdateDelete:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src
+      Handler: tasks.updateDelete
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+                - ssm:GetParameterHistory
+              Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/spa/JWT_SECRET
+      Events:
+        PutTask:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /tasks/{taskId}
+            Method: PUT
+            Auth:
+              Authorizer: JwtAuthorizer
+        DeleteTask:
+          Type: Api
+          Properties:
+            RestApiId: !Ref Api
+            Path: /tasks/{taskId}
+            Method: DELETE
+            Auth:
+              Authorizer: JwtAuthorizer
+
+  # ---------- DynamoDB ----------
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: taskId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: taskId
+          KeyType: RANGE
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+
+Outputs:
+  ApiBaseUrl:
+    Value: !Sub https://${Api}.execute-api.${AWS::Region}.amazonaws.com/prod
+    Description: API base URL

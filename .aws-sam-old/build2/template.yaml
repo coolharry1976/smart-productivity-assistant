@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Smart Productivity Assistant \u2013 Core infra + Auth"
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        USERS_TABLE:
+          Ref: UsersTable
+        JWT_SECRET_PARAM: /spa/JWT_SECRET
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors: '''*'''
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: email
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: email-index
+        KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  RegisterUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RegisterUser
+      Handler: src/auth/register.handler
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: Api
+            Path: /auth/register
+            Method: POST
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UsersTable
+      - SSMParameterReadPolicy:
+          ParameterName: /spa/JWT_SECRET
+    Metadata:
+      SamResourceId: RegisterUser
+  LoginUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: LoginUser
+      Handler: src/auth/login.handler
+      Events:
+        ApiPost:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: Api
+            Path: /auth/login
+            Method: POST
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: UsersTable
+      - SSMParameterReadPolicy:
+          ParameterName: /spa/JWT_SECRET
+    Metadata:
+      SamResourceId: LoginUser
+  JwtAuthorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: JwtAuthorizer
+      Handler: src/authorizer/index.handler
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName: /spa/JWT_SECRET
+    Metadata:
+      SamResourceId: JwtAuthorizer
+  SecureHello:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: SecureHello
+      Handler: src/auth/secureHello.handler
+      Events:
+        ApiGet:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: Api
+            Path: /secure/hello
+            Method: GET
+            Auth:
+              Authorizer: JwtAuthorizer
+      Policies:
+      - SSMParameterReadPolicy:
+          ParameterName: /spa/JWT_SECRET
+    Metadata:
+      SamResourceId: SecureHello
